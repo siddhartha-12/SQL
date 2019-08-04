@@ -1,0 +1,59 @@
+--Created by Siddhartha 
+--Use it in SQL SERVER MANAGEMENT STUDIO
+USE <<Database Name>>
+
+declare @SearchStr nvarchar(100),
+@replacestr nvarchar(200)
+
+set @SearchStr = 'Search string' -- Search criteria
+set @replacestr = 'Replace string' --Replace Criteria
+
+IF OBJECT_ID('tempdb..#Results') is not null
+Truncate table #Results
+ELSE
+CREATE TABLE #Results ([update] nvarchar(20), tableName nvarchar(50),[set] nvarchar(20), COlumnName nvarchar(200),EqualTo nvarchar(10),
+change nvarchar(200), [where] nvarchar(25), ColumnName1 nvarchar(370), equal2 nvarchar(20), columnValue nvarchar(3630))
+
+SET NOCOUNT ON
+
+DECLARE @TableName nvarchar(256), @ColumnName nvarchar(128), @Searchstr2 nvarchar(110)
+Set @TableName = ''
+SET @Searchstr2 = QUOTENAME('%' + @SearchStr + '%','''')
+
+WHILE @TableName is not null
+BEGIN
+SET @ColumnName = ''
+SET @TableName = 
+(
+SELECT MIN(QUOTENAME(TABLE_SCHEMA) + '.'+QUOTENAME(TABLE_NAME))
+FROM INFORMATION_sCHEMA.TABLESPACE
+WHERE	TABLE_TYPE = 'BASE TABLE'
+AND QUOTENAME(TABLE_SCHEMA) + '.' + QUOTENAME(TABLE_NAME) > @TableName
+AND OBJECTPROPERTY(
+OBJECT_ID(QUOTENAME(TABLE_SCHEMA)+'.' + QUOTENAME(TABLE_NAME))
+IF @ColumnName IS NOT NULL
+BEGIN
+INSERT INTO #Results
+EXEC
+(
+'SELECT MIN(QUOTENAME(COLUMN_NAME))
+FROM INFORMATION_sCHEMA.COLUMNS
+WHERE TABLE_SCHEMA = PARSENAME(@TableName,2)
+AND TABLE_NAME = PARASENAME(@TableName, 1)
+AND DATA_TYPE IN('char','varchar','nchar','nvarchar')
+AND QUOTENAME(COLUMN_NAME) > @ColumnName
+)
+IF @ColumName IS NOT NULL
+BEGIN
+INSERT INTO @Results
+EXEC
+(
+'SELECT ''UPDATE'', '''+ ''+@TableName+''+ ''', ''SET'','''+ @COlumnName + ''', ''='','''',''WHERE'', '''+@ColumnName +''', ''='',LEFT(' + @ColumnName + ',3630)
+FROM '+@TableName + ' (NOLOCK) '+
+' WHERE '+@ColumnName + ' LIKE '+ @Searchstr2
+
+)
+END
+END
+END
+SELECT [Update], TableName,[SET], COlumnName, EqualTo,(concat('''',replace(ColumnValue,@SearchStr,@Replacestr),'''')) as change,[where],ColumnName1,equal2,concat('''',ColumnValue,'''') FROM #Results
